@@ -9,62 +9,53 @@ public class TaskController : MonoBehaviour
     [System.Serializable]
     public class Task
     {
-        public string taskName;  // Название задания
-        public Sprite taskImage; // Картинка задания
-        public string taskId;    // Уникальный идентификатор задания
+        public string taskName;
+        public Sprite taskImage;
+        public string taskId;
     }
 
-    public List<Task> tasksList;  // Список всех возможных заданий
-    public Transform contentParent;  // Родительский объект для UI (например, ScrollView content)
-    public GameObject taskPrefab;    // Префаб элемента задания
-    public CharacterClicker characterClicker; // Ссылка на CharacterClicker
+    [SerializeField] private List<Task> tasksList;
+    [SerializeField] private Transform contentParent;
+    [SerializeField] private GameObject taskPrefab;
+    [SerializeField] private CharacterClicker characterClicker;
 
-    private const string TASKS_KEY = "generatedTasks";   // Ключ для сохранения сгенерированных заданий
-    private const string GENERATION_DATE_KEY = "tasksGenerationDate";  // Ключ для даты последней генерации
+    private const string TASKS_KEY = "generatedTasks";
+    private const string GENERATION_DATE_KEY = "tasksGenerationDate";
 
-    void Start()
+    private void Start()
     {
         GenerateOrLoadTasks();
     }
 
-    // Генерация заданий или загрузка сгенерированных заданий
-    void GenerateOrLoadTasks()
+    private void GenerateOrLoadTasks()
     {
-        // Проверяем, если ли сгенерированные задания и была ли их генерация в течение последнего дня
         if (PlayerPrefs.HasKey(GENERATION_DATE_KEY))
         {
             DateTime lastGenerationDate = DateTime.Parse(PlayerPrefs.GetString(GENERATION_DATE_KEY));
 
-            // Если с момента последней генерации прошли сутки, перегенерируем задания
             if ((DateTime.Now - lastGenerationDate).TotalHours >= 24)
             {
                 GenerateNewTasks();
             }
             else
             {
-                // Иначе загружаем существующие задания
                 LoadGeneratedTasks();
             }
         }
         else
         {
-            // Если это первый запуск, генерируем задания
             GenerateNewTasks();
         }
     }
 
-    // Метод для генерации новых заданий и их сохранения
-    void GenerateNewTasks()
+    private void GenerateNewTasks()
     {
-        // Перемешиваем список заданий
         List<Task> shuffledTasks = new List<Task>(tasksList);
         ShuffleList(shuffledTasks);
 
-        // Запоминаем первые 6 (или меньше, если в списке меньше 6 заданий)
         int tasksToShow = Mathf.Min(6, shuffledTasks.Count);
         List<string> generatedTaskIds = new List<string>();
 
-        // Удаляем все старые элементы UI
         foreach (Transform child in contentParent)
         {
             Destroy(child.gameObject);
@@ -75,11 +66,9 @@ public class TaskController : MonoBehaviour
             Task task = shuffledTasks[i];
             generatedTaskIds.Add(task.taskId);
 
-            // Отображаем задание на UI
             CreateTaskUI(task);
         }
 
-        // Сохраняем сгенерированные задания и дату генерации
         PlayerPrefs.SetString(TASKS_KEY, string.Join(",", generatedTaskIds));
         PlayerPrefs.SetString(GENERATION_DATE_KEY, DateTime.Now.ToString());
         PlayerPrefs.Save();
@@ -87,16 +76,13 @@ public class TaskController : MonoBehaviour
         Debug.Log("Сгенерированы новые задания.");
     }
 
-    // Метод для загрузки ранее сгенерированных заданий
-    void LoadGeneratedTasks()
+    private void LoadGeneratedTasks()
     {
-        // Удаляем старые элементы UI
         foreach (Transform child in contentParent)
         {
             Destroy(child.gameObject);
         }
 
-        // Загружаем сохраненные задания
         string[] savedTaskIds = PlayerPrefs.GetString(TASKS_KEY).Split(',');
 
         foreach (string taskId in savedTaskIds)
@@ -111,16 +97,13 @@ public class TaskController : MonoBehaviour
         Debug.Log("Задания загружены.");
     }
 
-    // Метод для создания UI задания
-    void CreateTaskUI(Task task)
+    private void CreateTaskUI(Task task)
     {
         GameObject taskObject = Instantiate(taskPrefab, contentParent);
 
-        // Устанавливаем текст и картинку
         taskObject.transform.Find("Text (TMP)").GetComponent<TextMeshProUGUI>().text = task.taskName;
         taskObject.transform.Find("icon").GetComponent<Image>().sprite = task.taskImage;
 
-        // Настраиваем кнопку
         Button taskButton = taskObject.transform.Find("Button").GetComponent<Button>();
 
         if (IsTaskCompletedWithinLastDay(task.taskId))
@@ -134,8 +117,7 @@ public class TaskController : MonoBehaviour
         }
     }
 
-    // Метод для перемешивания списка
-    void ShuffleList<T>(List<T> list)
+    private void ShuffleList<T>(List<T> list)
     {
         for (int i = 0; i < list.Count; i++)
         {
@@ -146,25 +128,20 @@ public class TaskController : MonoBehaviour
         }
     }
 
-    // Метод для выполнения задания
-    void OnTaskComplete(Task completedTask, Button taskButton)
+    private void OnTaskComplete(Task completedTask, Button taskButton)
     {
         Debug.Log("Задание выполнено: " + completedTask.taskName);
 
-        // Сохраняем текущее время выполнения задания
         PlayerPrefs.SetString(completedTask.taskId, DateTime.Now.ToString());
         PlayerPrefs.Save();
 
-        // Обновляем кнопку
         taskButton.interactable = false;
         taskButton.transform.Find("Text (TMP)").GetComponent<TextMeshProUGUI>().text = "Завершено";
 
-        // Добавляем очки к счету
-        characterClicker.AddScore(10); // Увеличиваем счет на 1 (или другое количество по вашему выбору)
+        characterClicker.AddScore(10);
     }
 
-    // Проверяем, выполнено ли задание за последние 24 часа
-    bool IsTaskCompletedWithinLastDay(string taskId)
+    private bool IsTaskCompletedWithinLastDay(string taskId)
     {
         if (PlayerPrefs.HasKey(taskId))
         {

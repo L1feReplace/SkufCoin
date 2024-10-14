@@ -5,22 +5,22 @@ using EasyUI.Popup;
 
 public class EnergyManager : MonoBehaviour
 {
-    public Image[] energyIcons; // Массив иконок энергии
-    public Sprite fullEnergyIcon; // Спрайт для полной энергии
-    public Sprite emptyEnergyIcon; // Спрайт для пустой энергии
-    public int clicksPerEnergy = 10; // Количество кликов для расхода одной энергии
-    public float energyRestoreTime = 5f; // Время для восстановления одной энергии
+    [SerializeField] private Image[] energyIcons;
+    [SerializeField] private Sprite fullEnergyIcon;
+    [SerializeField] private Sprite emptyEnergyIcon;
+    [SerializeField] private int clicksPerEnergy = 10;
+    [SerializeField] private float energyRestoreTime = 5f;
 
-    private int currentEnergy; // Текущий уровень энергии
-    private int currentClicks = 0; // Текущее количество кликов
-    private Coroutine restoreCoroutine; // Для управления корутиной восстановления энергии
+    private int currentEnergy;
+    private int currentClicks = 0;
+    private Coroutine restoreCoroutine;
 
-    void Start()
+    private void Start()
     {
-        currentEnergy = energyIcons.Length; // Начальная энергия равна количеству иконок
+        currentEnergy = energyIcons.Length;
         for (int i = 0; i < currentEnergy; i++)
         {
-            energyIcons[i].sprite = fullEnergyIcon; // Устанавливаем полные иконки при старте
+            energyIcons[i].sprite = fullEnergyIcon;
         }
     }
 
@@ -28,63 +28,59 @@ public class EnergyManager : MonoBehaviour
     {
         if (currentEnergy > 0)
         {
-            currentClicks++; // Увеличиваем количество кликов
+            currentClicks++;
 
             if (currentClicks >= clicksPerEnergy)
             {
-                UseEnergy(); // Используем одну единицу энергии
-                currentClicks = 0; // Сбрасываем счетчик кликов
+                UseEnergy();
+                currentClicks = 0;
             }
         }
     }
 
-    void UseEnergy()
+    private void UseEnergy()
     {
-        currentEnergy--; // Уменьшаем количество энергии
-        energyIcons[currentEnergy].sprite = emptyEnergyIcon; // Заменяем иконку на пустую
+        currentEnergy--;
+        energyIcons[currentEnergy].sprite = emptyEnergyIcon;
 
-        // Запускаем корутину восстановления энергии, если она исчерпана
         if (currentEnergy == 0)
         {
-            Debug.Log("Energy depleted!"); // Выводим сообщение, когда энергия закончилась
+            Debug.Log("Energy depleted!");
             Popup.Show("Энергия закончилась, возвращайтесь через некоторое время");
-            if (restoreCoroutine == null) // Проверяем, запущена ли корутина
+            if (restoreCoroutine == null)
             {
-                restoreCoroutine = StartCoroutine(RestoreEnergy()); // Запускаем восстановление энергии
+                restoreCoroutine = StartCoroutine(RestoreEnergy());
             }
         }
-        else if (restoreCoroutine == null) // Проверяем, нужно ли запустить восстановление энергии
+        else if (restoreCoroutine == null)
         {
-            restoreCoroutine = StartCoroutine(RestoreEnergy()); // Запускаем восстановление энергии
+            restoreCoroutine = StartCoroutine(RestoreEnergy());
         }
     }
 
-    // Метод для проверки, есть ли еще энергия
     public bool HasEnergy()
     {
         return currentEnergy > 0;
     }
 
-    void Update()
+    private void Update()
     {
-        // Восстанавливаем энергию, если текущая энергия меньше максимума и корутина не запущена
         if (currentEnergy < energyIcons.Length && restoreCoroutine == null)
         {
             restoreCoroutine = StartCoroutine(RestoreEnergy());
         }
     }
 
-    IEnumerator RestoreEnergy()
+    private IEnumerator RestoreEnergy()
     {
         while (currentEnergy < energyIcons.Length)
         {
-            yield return new WaitForSeconds(energyRestoreTime); // Ждем определенное время
+            yield return new WaitForSeconds(energyRestoreTime);
 
-            // Восстанавливаем иконку, только если есть возможность
-            energyIcons[currentEnergy].sprite = fullEnergyIcon; // Восстанавливаем иконку
-            currentEnergy++; // Увеличиваем количество энергии
+            energyIcons[currentEnergy].sprite = fullEnergyIcon;
+            currentEnergy++;
         }
 
-        restoreCoroutine = null; // Освобождаем корутину, когда восстановление завершено
+        restoreCoroutine = null;
     }
 }
